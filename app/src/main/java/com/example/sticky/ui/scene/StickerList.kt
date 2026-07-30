@@ -44,16 +44,6 @@ import com.example.sticky.ui.viewmodel.StickerViewModel
 import com.example.sticky.ui.viewmodel.ViewModelFactory
 import com.example.sticky.utils.image.CanHubCropView
 
-//@Composable
-//fun CenterHelloWorldScreen(navController: NavController) {
-//    Box(
-//        modifier = Modifier.fillMaxSize(),
-//        contentAlignment = Alignment.Center
-//    ) {
-//        Text(text = "Hello World")
-//    }
-//}
-
 @Composable
 fun ImageSelector(
     packId: Int = -1, // Added packId parameter
