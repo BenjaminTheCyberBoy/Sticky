@@ -1,7 +1,10 @@
+import com.github.jk1.license.filter.LicenseBundleNormalizer
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.license.report)
 }
 
 android {
@@ -63,4 +66,9 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(libs.compose.material.icons.core)
     implementation("io.coil-kt.coil3:coil-compose:3.5.0")
+}
+
+licenseReport {
+    filters = arrayOf(LicenseBundleNormalizer())
+    allowedLicensesFile = file("$rootDir/allowed-licenses.json")
 }

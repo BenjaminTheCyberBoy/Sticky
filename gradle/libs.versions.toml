@@ -13,10 +13,11 @@ composeBom = "2026.06.01"
 ui = "1.11.4"
 navigationCompose = "2.9.8"
 appcompat = "1.7.1"
-room3CommonJvm = "3.0.0"
-room3Runtime = "3.0.0"
+room3CommonJvm = "3.0.1"
+room3Runtime = "3.0.1"
 media3Database = "1.10.1"
 androidImageCropper = "4.7.0"
+licenseReport = "3.1.4"
 # ... (rest of the versions if I had them, but I'll just target the specific lines)
 
 [libraries]
@@ -49,4 +50,5 @@ canhub-cropper = { group = "com.vanniktech", name = "android-image-cropper", ver
 android-application = { id = "com.android.application", version.ref = "agp" }
 ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+license-report = { id = "com.github.jk1.dependency-license-report", version.ref = "licenseReport" }
 
