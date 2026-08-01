@@ -15,8 +15,8 @@ android {
         applicationId = "com.example.sticky"
         minSdk = 24
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = project.property("VERSION_CODE").toString().toInt()
+        versionName = project.property("VERSION_NAME").toString()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "CONTENT_PROVIDER_AUTHORITY", "\"${applicationId}.stickercontentprovider\"")
