@@ -3,6 +3,7 @@ package com.example.sticky.utils.image
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
 import android.net.Uri
 import android.os.Build
 import androidx.core.content.FileProvider
@@ -22,8 +23,8 @@ fun convertImageToSticker(context: Context, sourceUri: Uri?, packId: Int, sticke
         inputStream = context.contentResolver.openInputStream(sourceUri)
         val originalBitmap = BitmapFactory.decodeStream(inputStream) ?: return null
 
-        // 1. Resize the image to exactly 512x512 pixels
-        val resizedBitmap = Bitmap.createScaledBitmap(originalBitmap, 512, 512, true)
+        // 1. Resize the image to exactly 512x512 pixels maintaining aspect ratio
+        val resizedBitmap = resizeWithAspectRatio(originalBitmap, 512)
 
         // 2. Target the "packs" directory as the base, then the pack subdirectory
         val baseDir = File(context.filesDir, "packs")
@@ -35,7 +36,7 @@ fun convertImageToSticker(context: Context, sourceUri: Uri?, packId: Int, sticke
         // 3. Save with a name based on the number of stickers in the table
         val fileName = "${stickerCount + 1}.webp"
         val outputFile = File(packDir, fileName)
-        
+
         val isCompressed = compressToWebP(resizedBitmap, outputFile)
 
         // Return the relative path for the DB (e.g., "1/1.webp")
@@ -58,8 +59,8 @@ fun convertImageToTrayIcon(context: Context, sourceUri: Uri?, packId: Int): Stri
         inputStream = context.contentResolver.openInputStream(sourceUri)
         val originalBitmap = BitmapFactory.decodeStream(inputStream) ?: return null
 
-        // Tray icon must be 96x96
-        val resizedBitmap = Bitmap.createScaledBitmap(originalBitmap, 96, 96, true)
+        // Tray icon must be 96x96 maintaining aspect ratio
+        val resizedBitmap = resizeWithAspectRatio(originalBitmap, 96)
 
         val baseDir = File(context.filesDir, "packs")
         val packDir = File(baseDir, packId.toString())
@@ -125,4 +126,36 @@ private fun compressToWebP(bitmap: Bitmap, targetFile: File, maxFileSize: Int = 
         e.printStackTrace()
         false
     }
+}
+
+/**
+ * Resizes a bitmap to fit within targetSize x targetSize while maintaining aspect ratio,
+ * centering it on a transparent background.
+ */
+private fun resizeWithAspectRatio(bitmap: Bitmap, targetSize: Int): Bitmap {
+    val width = bitmap.width
+    val height = bitmap.height
+    val aspectRatio = width.toFloat() / height.toFloat()
+
+    val newWidth: Int
+    val newHeight: Int
+
+    if (width > height) {
+        newWidth = targetSize
+        newHeight = (targetSize / aspectRatio).toInt().coerceAtLeast(1)
+    } else {
+        newHeight = targetSize
+        newWidth = (targetSize * aspectRatio).toInt().coerceAtLeast(1)
+    }
+
+    val scaledBitmap = Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
+    val outputBitmap = Bitmap.createBitmap(targetSize, targetSize, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(outputBitmap)
+
+    val left = (targetSize - newWidth) / 2f
+    val top = (targetSize - newHeight) / 2f
+
+    canvas.drawBitmap(scaledBitmap, left, top, null)
+
+    return outputBitmap
 }
