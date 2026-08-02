@@ -43,10 +43,11 @@ import com.example.sticky.utils.image.getStickerUri
 import com.example.sticky.ui.viewmodel.StickerViewModel
 import com.example.sticky.ui.viewmodel.ViewModelFactory
 import com.example.sticky.utils.image.CanHubCropView
+import kotlin.uuid.Uuid
 
 @Composable
 fun ImageSelector(
-    packId: Int = -1, // Added packId parameter
+    packId: Uuid? = null, // Added packId parameter
     viewModel: StickerViewModel = viewModel(
         factory = ViewModelFactory(LocalContext.current)
     )
@@ -58,7 +59,7 @@ fun ImageSelector(
 
     // Load stickers when the screen enters the composition
     LaunchedEffect(packId) {
-        viewModel.setPackId(packId)
+        packId?.let { viewModel.setPackId(it) }
     }
 
     val singlePhotoPickerLauncher = rememberLauncherForActivityResult(
@@ -85,7 +86,7 @@ fun ImageSelector(
                 ) { view ->
                     cropper = view
                     view.setOnCropImageCompleteListener { _, result ->
-                        if (result.isSuccessful) {
+                        if (result.isSuccessful && packId != null) {
                             val croppedUri = result.uriContent
                             val relativePath = convertImageToSticker(context, croppedUri, packId, stickers.size)
                             if (relativePath != null) {

@@ -8,6 +8,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.sticky.ui.scene.ImageSelector
 import com.example.sticky.ui.scene.StickerPackListScreen
+import kotlin.uuid.Uuid
 
 @Composable
 fun Navigation() {
@@ -19,9 +20,10 @@ fun Navigation() {
         }
         composable(
             route = Screen.StickerScreen.route,
-            arguments = listOf(navArgument("packId") { type = NavType.IntType })
+            arguments = listOf(navArgument("packId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val packId = backStackEntry.arguments?.getInt("packId") ?: -1
+            val packIdStr = backStackEntry.arguments?.getString("packId")
+            val packId = try { packIdStr?.let { Uuid.parse(it) } } catch (e: Exception) { null }
             ImageSelector(packId = packId)
         }
         composable(Screen.ImagePickerScreen.route) {

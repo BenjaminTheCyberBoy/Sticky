@@ -12,9 +12,11 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.uuid.Uuid
 
 class StickerViewModel(
     private val dao : StickerDAO,
@@ -23,17 +25,17 @@ class StickerViewModel(
     // handles user input like name, author, etc
     private val _state = MutableStateFlow(StickerState())
 
-    private val _packId = MutableStateFlow<Int>(-1)
+    private val _packId = MutableStateFlow<Uuid?>(null)
 
     // handles the list from the database
     @OptIn(ExperimentalCoroutinesApi::class)
     val stickers = _packId.flatMapLatest { id ->
-        dao.getStickersByPack(id)
+        if (id == null) flowOf(emptyList()) else dao.getStickersByPack(id)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     val state = _state.asStateFlow()
 
-    fun setPackId(id: Int) {
+    fun setPackId(id: Uuid) {
         _packId.value = id
     }
 
@@ -83,7 +85,7 @@ class StickerViewModel(
                 val isAnimated = state.value.isAnimatedSticker
                 val packId = _packId.value
                 
-                if (packId != -1) {
+                if (packId != null) {
                     viewModelScope.launch {
                         // 1. Insert the new sticker
                         dao.insertSticker(
@@ -96,7 +98,7 @@ class StickerViewModel(
                         )
                         // 2. Increment the imageDataVersion of the pack and update tray icon if empty
                         packDao.getStickerPack(packId)?.let { pack ->
-                            val newTrayIcon = if (pack.trayIcon.isEmpty()) "$packId/tray.webp" else pack.trayIcon
+                            val newTrayIcon = if (pack.trayIcon.isEmpty()) "${packId}/tray.webp" else pack.trayIcon
                             packDao.insertStickerPack(
                                 pack.copy(
                                     imageDataVersion = pack.imageDataVersion + 1,

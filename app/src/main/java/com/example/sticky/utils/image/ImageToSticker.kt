@@ -11,12 +11,13 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.InputStream
+import kotlin.uuid.Uuid
 
 /**
  * Converts a source image to a 512x512 WebP sticker and saves it in the pack's directory.
  * Returns the relative path (e.g., "1/1.webp") to be stored in the database.
  */
-fun convertImageToSticker(context: Context, sourceUri: Uri?, packId: Int, stickerCount: Int): String? {
+fun convertImageToSticker(context: Context, sourceUri: Uri?, packId: Uuid, stickerCount: Int): String? {
     if (sourceUri == null) return null
     var inputStream: InputStream? = null
     return try {
@@ -52,7 +53,7 @@ fun convertImageToSticker(context: Context, sourceUri: Uri?, packId: Int, sticke
 /**
  * Converts a source image to a 96x96 WebP tray icon and saves it in the pack's directory.
  */
-fun convertImageToTrayIcon(context: Context, sourceUri: Uri?, packId: Int): String? {
+fun convertImageToTrayIcon(context: Context, sourceUri: Uri?, packId: Uuid): String? {
     if (sourceUri == null) return null
     var inputStream: InputStream? = null
     return try {

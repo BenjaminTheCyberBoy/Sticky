@@ -16,6 +16,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
 import android.net.Uri
+import kotlin.uuid.Uuid
 
 class StickerPackViewModel(
     private val dao : StickerPackDAO,
@@ -29,7 +30,7 @@ class StickerPackViewModel(
 
     val state = _state.asStateFlow()
 
-    suspend fun getFirstStickerPath(packId: Int): String? {
+    suspend fun getFirstStickerPath(packId: Uuid): String? {
         return dao.getFirstStickerPath(packId)
     }
 
