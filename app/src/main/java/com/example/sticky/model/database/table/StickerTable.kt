@@ -4,6 +4,7 @@ import androidx.room3.Entity
 import androidx.room3.ForeignKey
 import androidx.room3.Index
 import androidx.room3.PrimaryKey
+import kotlin.uuid.Uuid
 
 @Entity(
     tableName = "sticker",
@@ -20,7 +21,7 @@ import androidx.room3.PrimaryKey
 data class StickerTable(
     @PrimaryKey(autoGenerate = true)
     val id: Int = 0,
-    val packId: Int,
+    val packId: Uuid,
     val fileName: String,
     val emojis: String,
     val isAnimated: Boolean,

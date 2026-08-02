@@ -12,6 +12,7 @@ import com.example.sticky.data.DatabaseProvider
 import com.example.sticky.model.database.table.StickerPackTable
 import java.io.File
 import java.io.FileNotFoundException
+import kotlin.uuid.Uuid
 
 class StickerContentProvider : ContentProvider() {
 
@@ -131,7 +132,8 @@ class StickerContentProvider : ContentProvider() {
     }
 
     private fun getCursorForSingleStickerPack(uri: Uri): Cursor {
-        val identifier = uri.lastPathSegment?.toIntOrNull() ?: return getStickerPackInfo(uri, emptyList())
+        val identifierStr = uri.lastPathSegment ?: return getStickerPackInfo(uri, emptyList())
+        val identifier = try { Uuid.parse(identifierStr) } catch (e: Exception) { return getStickerPackInfo(uri, emptyList()) }
         val dao = DatabaseProvider.getDatabase(context!!).stickerPackDao
         val pack = dao.getStickerPackSync(identifier)
         return getStickerPackInfo(uri, pack?.let { listOf(it) } ?: emptyList())
@@ -180,7 +182,7 @@ class StickerContentProvider : ContentProvider() {
     private fun getStickersForAStickerPack(uri: Uri): Cursor {
         val identifierStr = uri.lastPathSegment ?: throw IllegalArgumentException("Invalid pack identifier")
         Log.d("StickerContentProvider", "getStickersForAStickerPack: $identifierStr")
-        val identifier = identifierStr.toIntOrNull() ?: throw IllegalArgumentException("Invalid pack identifier")
+        val identifier = try { Uuid.parse(identifierStr) } catch (e: Exception) { throw IllegalArgumentException("Invalid pack identifier: $identifierStr") }
         val stickerDao = DatabaseProvider.getDatabase(context!!).stickerDao
         val stickers = stickerDao.getStickersByPackSync(identifier)
 

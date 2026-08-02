@@ -5,6 +5,7 @@ import androidx.room3.Query
 import androidx.room3.Upsert
 import com.example.sticky.model.database.table.StickerPackTable
 import kotlinx.coroutines.flow.Flow
+import kotlin.uuid.Uuid
 
 @Dao
 interface StickerPackDAO {
@@ -17,20 +18,20 @@ interface StickerPackDAO {
     fun getAllStickerPacksSync(): List<StickerPackTable>
 
     @Query("SELECT * FROM sticker_pack WHERE packId = :packId")
-    fun getStickerPackSync(packId: Int): StickerPackTable?
+    fun getStickerPackSync(packId: Uuid): StickerPackTable?
 
     @Query("SELECT * FROM sticker_pack WHERE packId = :packId")
-    suspend fun getStickerPack(packId: Int): StickerPackTable?
+    suspend fun getStickerPack(packId: Uuid): StickerPackTable?
 
     @Query("DELETE FROM sticker_pack WHERE packId = :packId")
-    suspend fun deleteStickerPack(packId: Int)
+    suspend fun deleteStickerPack(packId: Uuid)
 
     @Upsert
     suspend fun insertStickerPack(stickerPack: StickerPackTable)
 
     @Query("UPDATE sticker_pack SET trayIcon = :trayIcon, imageDataVersion = imageDataVersion + 1 WHERE packId = :packId")
-    suspend fun updateTrayIcon(packId: Int, trayIcon: String)
+    suspend fun updateTrayIcon(packId: Uuid, trayIcon: String)
 
     @Query("SELECT fileName FROM sticker WHERE packId = :packId ORDER BY createdAt ASC LIMIT 1")
-    suspend fun getFirstStickerPath(packId: Int): String?
+    suspend fun getFirstStickerPath(packId: Uuid): String?
 }

@@ -9,16 +9,15 @@ import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import kotlin.uuid.Uuid
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -212,7 +211,7 @@ fun SendPackToWHButton(onClick: () -> Unit){
     }
 }
 
-fun addPackToWhatsApp(launcher: ActivityResultLauncher<Intent>, context: Context, packId: Int, packName: String) {
+fun addPackToWhatsApp(launcher: ActivityResultLauncher<Intent>, context: Context, packId: Uuid, packName: String) {
     val intent = Intent().apply {
         action = "com.whatsapp.intent.action.ENABLE_STICKER_PACK"
         putExtra("sticker_pack_id", packId.toString())
