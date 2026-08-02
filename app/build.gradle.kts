@@ -70,5 +70,5 @@ dependencies {
 
 licenseReport {
     filters = arrayOf(LicenseBundleNormalizer())
-    allowedLicensesFile = file("$rootDir/non-propriatary.json")
+    allowedLicensesFile = file("$rootDir/non-propriatary-ln.json")
 }
