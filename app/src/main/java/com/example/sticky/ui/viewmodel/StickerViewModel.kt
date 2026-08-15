@@ -102,7 +102,8 @@ class StickerViewModel(
                             packDao.insertStickerPack(
                                 pack.copy(
                                     imageDataVersion = pack.imageDataVersion + 1,
-                                    trayIcon = newTrayIcon
+                                    trayIcon = newTrayIcon,
+                                    isAnimated = isAnimated
                                 )
                             )
                         }

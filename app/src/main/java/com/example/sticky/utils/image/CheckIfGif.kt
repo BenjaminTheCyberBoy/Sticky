@@ -4,6 +4,7 @@ import android.content.Context
 import android.net.Uri
 
 fun isGifUri(context: Context, uri: Uri): Boolean {
+    if (uri == Uri.EMPTY) return false
     // GIF magic bytes for "GIF8" (0x47 0x49 0x46 0x38)
     val gifSignature = byteArrayOf(
         0x47.toByte(), // G

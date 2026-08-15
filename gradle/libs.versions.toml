@@ -18,6 +18,7 @@ room3Runtime = "3.0.1"
 media3Database = "1.10.1"
 androidImageCropper = "4.7.0"
 licenseReport = "3.1.4"
+ffmpegKit = "6.1.4"
 # ... (rest of the versions if I had them, but I'll just target the specific lines)
 
 [libraries]
@@ -45,6 +46,7 @@ androidx-room3-runtime = { group = "androidx.room3", name = "room3-runtime", ver
 androidx-room3-compiler = { group = "androidx.room3", name = "room3-compiler", version.ref = "room3CommonJvm" }
 androidx-media3-database = { group = "androidx.media3", name = "media3-database", version.ref = "media3Database" }
 canhub-cropper = { group = "com.vanniktech", name = "android-image-cropper", version.ref = "androidImageCropper" }
+ffmpeg-kit-full = { group = "com.mrljdx", name = "ffmpeg-kit-full", version.ref = "ffmpegKit" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

@@ -57,12 +57,16 @@ fun convertGifToSticker(
     // -loop 0: Infinite loop for animated WebP
     // -vcodec libwebp: Use the WebP encoder
     // -lossless 0: Use lossy compression to stay under the 500KB limit
-    // -q:v 70: Quality setting (0-100)
-    // -preset default: Compression preset
+    // -q:v 50: Quality setting (0-100), reduced to 50 to ensure we stay under 500KB
     // -an: Remove audio track
-    val command = "-y -i \"${tempInputFile.absolutePath}\" -t 10 -vf \"$filter\" -loop 0 -vcodec libwebp -lossless 0 -q:v 70 -preset default -an \"${outputFile.absolutePath}\""
+    val command = "-y -i \"${tempInputFile.absolutePath}\" -t 10 -vf \"$filter\" -loop 0 -vcodec libwebp -lossless 0 -q:v 50 -an \"${outputFile.absolutePath}\""
 
     Log.d("GifToSticker", "Executing FFmpeg: $command")
+
+    // Check available encoders just once for debugging
+    FFmpegKit.executeAsync("-encoders") { session ->
+        Log.d("GifToSticker", "Available Encoders:\n${session.allLogsAsString}")
+    }
 
     FFmpegKit.executeAsync(command) { session ->
         val returnCode = session.returnCode

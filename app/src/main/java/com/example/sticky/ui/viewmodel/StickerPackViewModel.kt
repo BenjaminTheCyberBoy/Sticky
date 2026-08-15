@@ -146,6 +146,21 @@ class StickerPackViewModel(
                         return@launch
                     }
 
+                    val hasAnimated = stickers.any { it.isAnimated }
+                    val hasStatic = stickers.any { !it.isAnimated }
+
+                    if (hasAnimated && hasStatic) {
+                        event.onResult(false, "Cannot mix animated and static stickers in one pack")
+                        return@launch
+                    }
+
+                    // Ensure the pack's isAnimated flag matches the stickers
+                    if (hasAnimated != event.pack.isAnimated) {
+                        withContext(Dispatchers.IO) {
+                            dao.insertStickerPack(event.pack.copy(isAnimated = hasAnimated))
+                        }
+                    }
+
                     // Ensure tray icon exists and DB is updated
                     val trayFile = File(File(event.context.filesDir, "packs/${event.pack.packId}"), "tray.webp")
                     if (event.pack.trayIcon.isEmpty() || !trayFile.exists()) {
