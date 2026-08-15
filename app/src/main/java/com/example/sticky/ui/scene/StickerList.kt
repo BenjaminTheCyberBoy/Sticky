@@ -37,6 +37,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
+import coil3.ImageLoader
+import coil3.gif.AnimatedImageDecoder
+import coil3.gif.GifDecoder
 import com.example.sticky.event.StickerEvent
 import com.example.sticky.model.database.table.StickerTable
 import com.example.sticky.utils.image.convertImageToSticker
@@ -49,7 +52,6 @@ import com.example.sticky.utils.image.isGifUri
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlin.uuid.Uuid
 
 @Composable
@@ -180,10 +182,12 @@ fun ImageSelector(
 @Composable
 fun StickerCard(
     uri: Uri,
+    imageLoader: ImageLoader,
     modifier: Modifier = Modifier
 ) {
     AsyncImage(
         model = uri,
+        imageLoader = imageLoader,
         contentDescription = "Sticker preview",
         contentScale = ContentScale.Crop,
         modifier = modifier
@@ -193,6 +197,17 @@ fun StickerCard(
 @Composable
 fun StickerGridScreen(stickers: List<StickerTable>, modifier: Modifier = Modifier) {
     val context = LocalContext.current
+    val imageLoader = remember {
+        ImageLoader.Builder(context)
+            .components {
+                if (android.os.Build.VERSION.SDK_INT >= 28) {
+                    add(AnimatedImageDecoder.Factory())
+                } else {
+                    add(GifDecoder.Factory())
+                }
+            }
+            .build()
+    }
 
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
@@ -211,6 +226,7 @@ fun StickerGridScreen(stickers: List<StickerTable>, modifier: Modifier = Modifie
             ) {
                 StickerCard(
                     uri = uri,
+                    imageLoader = imageLoader,
                     modifier = Modifier.aspectRatio(1f)
                 )
             }
