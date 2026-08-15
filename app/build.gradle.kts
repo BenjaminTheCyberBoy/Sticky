@@ -66,6 +66,7 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(libs.compose.material.icons.core)
     implementation("io.coil-kt.coil3:coil-compose:3.5.0")
+    implementation("dev.ffmpegkit-maintained:ffmpeg-kit-full:8.1.7")
 }
 
 licenseReport {

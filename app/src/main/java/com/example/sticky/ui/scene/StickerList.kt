@@ -19,9 +19,11 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -31,11 +33,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
+import com.canhub.cropper.CropImageView
 import com.example.sticky.event.StickerEvent
 import com.example.sticky.model.database.table.StickerTable
 import com.example.sticky.utils.image.convertImageToSticker
@@ -43,11 +47,14 @@ import com.example.sticky.utils.image.getStickerUri
 import com.example.sticky.ui.viewmodel.StickerViewModel
 import com.example.sticky.ui.viewmodel.ViewModelFactory
 import com.example.sticky.utils.image.CanHubCropView
+import com.example.sticky.utils.image.convertGifToSticker
+import com.example.sticky.utils.image.convertImageToTrayIcon
+import com.example.sticky.utils.image.isGifUri
 import kotlin.uuid.Uuid
 
 @Composable
 fun ImageSelector(
-    packId: Uuid? = null, // Added packId parameter
+    packId: Uuid? = null,
     viewModel: StickerViewModel = viewModel(
         factory = ViewModelFactory(LocalContext.current)
     )
@@ -56,6 +63,8 @@ fun ImageSelector(
 
     val stickers by viewModel.stickers.collectAsState(initial = emptyList())
     val state by viewModel.state.collectAsState()
+    
+    var isProcessing by remember { mutableStateOf(false) }
 
     // Load stickers when the screen enters the composition
     LaunchedEffect(packId) {
@@ -78,7 +87,7 @@ fun ImageSelector(
         if (state.imageUri != Uri.EMPTY) {
             // Crop
             Box(modifier = Modifier.fillMaxSize()) {
-                var cropper by remember { mutableStateOf<com.canhub.cropper.CropImageView?>(null) }
+                var cropper by remember { mutableStateOf<CropImageView?>(null) }
 
                 CanHubCropView(
                     imageUri = state.imageUri,
@@ -87,36 +96,63 @@ fun ImageSelector(
                     cropper = view
                     view.setOnCropImageCompleteListener { _, result ->
                         if (result.isSuccessful && packId != null) {
-                            val croppedUri = result.uriContent
-                            val relativePath = convertImageToSticker(context, croppedUri, packId, stickers.size)
-                            if (relativePath != null) {
-                                // If this is the first sticker, also create a proper 96x96 tray icon
-                                if (stickers.isEmpty()) {
-                                    com.example.sticky.utils.image.convertImageToTrayIcon(context, croppedUri, packId)
+                            val croppedUri = result.uriContent ?: return@setOnCropImageCompleteListener
+                            
+                            if (isGifUri(context, croppedUri)) {
+                                isProcessing = true
+                                convertGifToSticker(context, croppedUri, packId, stickers.size) { path ->
+                                    isProcessing = false
+                                    if (path != null) {
+                                        if (stickers.isEmpty()) {
+                                            convertImageToTrayIcon(context, croppedUri, packId)
+                                        }
+                                        viewModel.onEvent(StickerEvent.SetStickerFileName(path))
+                                        viewModel.onEvent(StickerEvent.SetStickerEmojis("☕"))
+                                        viewModel.onEvent(StickerEvent.SetStickerIsAnimated(true))
+                                        viewModel.onEvent(StickerEvent.SaveSticker)
+                                    } else {
+                                        Toast.makeText(context, "Failed to convert GIF", Toast.LENGTH_SHORT).show()
+                                    }
+                                    viewModel.onEvent(StickerEvent.ImageSelected(Uri.EMPTY))
                                 }
-                                viewModel.onEvent(StickerEvent.SetStickerFileName(relativePath))
-                                viewModel.onEvent(StickerEvent.SetStickerEmojis("☕")) // WhatsApp requires at least 1 emoji
-                                viewModel.onEvent(StickerEvent.SetStickerIsAnimated(false))
-                                viewModel.onEvent(StickerEvent.SaveSticker)
+                            } else {
+                                val path = convertImageToSticker(context, croppedUri, packId, stickers.size)
+                                if (path != null) {
+                                    if (stickers.isEmpty()) {
+                                        convertImageToTrayIcon(context, croppedUri, packId)
+                                    }
+                                    viewModel.onEvent(StickerEvent.SetStickerFileName(path))
+                                    viewModel.onEvent(StickerEvent.SetStickerEmojis("☕"))
+                                    viewModel.onEvent(StickerEvent.SetStickerIsAnimated(false))
+                                    viewModel.onEvent(StickerEvent.SaveSticker)
+                                }
+                                viewModel.onEvent(StickerEvent.ImageSelected(Uri.EMPTY))
                             }
-                            // Return to grid
-                            viewModel.onEvent(StickerEvent.ImageSelected(Uri.EMPTY))
                         } else {
                             viewModel.onEvent(StickerEvent.ImageSelected(Uri.EMPTY))
                         }
                     }
                 }
 
-                // Save button for the cropper
-                FloatingActionButton(
-                    onClick = { cropper?.croppedImageAsync() },
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(16.dp),
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.primary
-                ) {
-                    Icon(Icons.Filled.Check, "Save Sticker")
+                if (isProcessing) {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator()
+                    }
+                } else {
+                    // Save button for the cropper
+                    FloatingActionButton(
+                        onClick = { cropper?.croppedImageAsync() },
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(16.dp),
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.primary
+                    ) {
+                        Icon(Icons.Filled.Check, "Save Sticker")
+                    }
                 }
             }
         } else {
@@ -145,8 +181,8 @@ fun StickerCard(
     AsyncImage(
         model = uri,
         contentDescription = "Sticker preview",
-        contentScale = ContentScale.Crop,
-        modifier = modifier
+        contentScale = ContentScale.Fit,
+        modifier = modifier.padding(8.dp)
     )
 }
 
@@ -154,25 +190,38 @@ fun StickerCard(
 fun StickerGridScreen(stickers: List<StickerTable>, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     
-    LazyVerticalGrid(
-        columns = GridCells.Fixed(3),
-        contentPadding = PaddingValues(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(12.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-        modifier = modifier.fillMaxSize()
-    ) {
-        items(stickers, key = { it.id }) { sticker ->
-            val uri = remember(sticker.fileName) {
-                getStickerUri(context, sticker.fileName)
-            }
-            
-            Card(
-                elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-            ) {
-                StickerCard(
-                    uri = uri,
-                    modifier = Modifier.aspectRatio(1f)
-                )
+    if (stickers.isEmpty()) {
+        Box(
+            modifier = modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = "No stickers yet. Tap + to add one!",
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+        }
+    } else {
+        LazyVerticalGrid(
+            columns = GridCells.Fixed(3),
+            contentPadding = PaddingValues(16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = modifier.fillMaxSize()
+        ) {
+            items(stickers, key = { it.id }) { sticker ->
+                val uri = remember(sticker.fileName) {
+                    getStickerUri(context, sticker.fileName)
+                }
+                
+                Card(
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                ) {
+                    StickerCard(
+                        uri = uri,
+                        modifier = Modifier.aspectRatio(1f)
+                    )
+                }
             }
         }
     }
