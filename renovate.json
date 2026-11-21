@@ -1,0 +1,20 @@
+
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "schedule": ["before 5am on Monday"],
+  "timezone": "Africa/Johannesburg",
+  "labels": ["dependencies"],
+  "dependencyDashboard": true,
+  "prConcurrentLimit": 5,
+  "groupName": "Kotlin and Android dependencies",
+  "groupSlug": "kotlin-android",
+  "matchPackageNames": [
+    "org.jetbrains.kotlin/**",
+    "com.android.tools.build/**",
+    "androidx.**"
+  ],
+  "separateMajorMinor": true,
+  "separateMultipleMajor": true
+}
+
