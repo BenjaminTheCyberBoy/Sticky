@@ -12,6 +12,8 @@
     { "moduleLicense": "Unicode License Agreement - Data Files and Software" },
     { "moduleLicense": "Mozilla Public License Version 2.0" },
     { "moduleLicense": "Google Services Terms of Service" },
-    { "moduleLicense": "Android Software Development Kit License" }
+    { "moduleLicense": "Android Software Development Kit License" },
+    {"moduleLicense": "GNU LESSER GENERAL PUBLIC LICENSE, Version 3"},
+    {"moduleLicense": "The 3-Clause BSD License"}
   ]
 }

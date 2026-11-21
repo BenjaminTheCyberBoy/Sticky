@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -36,6 +37,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
+import coil3.ImageLoader
+import coil3.gif.AnimatedImageDecoder
+import coil3.gif.GifDecoder
 import com.example.sticky.event.StickerEvent
 import com.example.sticky.model.database.table.StickerTable
 import com.example.sticky.utils.image.convertImageToSticker
@@ -43,6 +47,11 @@ import com.example.sticky.utils.image.getStickerUri
 import com.example.sticky.ui.viewmodel.StickerViewModel
 import com.example.sticky.ui.viewmodel.ViewModelFactory
 import com.example.sticky.utils.image.CanHubCropView
+import com.example.sticky.utils.image.convertGifToSticker
+import com.example.sticky.utils.image.isGifUri
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlin.uuid.Uuid
 
 @Composable
@@ -73,50 +82,83 @@ fun ImageSelector(
         }
     )
 
+    // Check the state.imageUri, if Gif just convert to animated webp, otherwise go to crop screen
+    val isGif = remember(state.imageUri) { isGifUri(context, state.imageUri) }
+
     // Layout wrapping both the Grid and the Floating Button
     Box(modifier = Modifier.fillMaxSize()) {
         if (state.imageUri != Uri.EMPTY) {
-            // Crop
-            Box(modifier = Modifier.fillMaxSize()) {
-                var cropper by remember { mutableStateOf<com.canhub.cropper.CropImageView?>(null) }
-
-                CanHubCropView(
-                    imageUri = state.imageUri,
-                    modifier = Modifier.fillMaxSize()
-                ) { view ->
-                    cropper = view
-                    view.setOnCropImageCompleteListener { _, result ->
-                        if (result.isSuccessful && packId != null) {
-                            val croppedUri = result.uriContent
-                            val relativePath = convertImageToSticker(context, croppedUri, packId, stickers.size)
-                            if (relativePath != null) {
-                                // If this is the first sticker, also create a proper 96x96 tray icon
-                                if (stickers.isEmpty()) {
-                                    com.example.sticky.utils.image.convertImageToTrayIcon(context, croppedUri, packId)
+            if (isGif) {
+                // GIF processing
+                LaunchedEffect(state.imageUri) {
+                    if (packId != null) {
+                        convertGifToSticker(context, state.imageUri, packId, stickers.size) { relativePath ->
+                            CoroutineScope(Dispatchers.Main).launch {
+                                if (relativePath != null) {
+                                    // If this is the first sticker, also create a proper 96x96 tray icon
+                                    if (stickers.isEmpty()) {
+                                        com.example.sticky.utils.image.convertImageToTrayIcon(context, state.imageUri, packId)
+                                    }
+                                    viewModel.onEvent(StickerEvent.SetStickerFileName(relativePath))
+                                    viewModel.onEvent(StickerEvent.SetStickerEmojis("☕"))
+                                    viewModel.onEvent(StickerEvent.SetStickerIsAnimated(true))
+                                    viewModel.onEvent(StickerEvent.SaveSticker)
+                                } else {
+                                    Toast.makeText(context, "Failed to convert GIF", Toast.LENGTH_SHORT).show()
                                 }
-                                viewModel.onEvent(StickerEvent.SetStickerFileName(relativePath))
-                                viewModel.onEvent(StickerEvent.SetStickerEmojis("☕")) // WhatsApp requires at least 1 emoji
-                                viewModel.onEvent(StickerEvent.SetStickerIsAnimated(false))
-                                viewModel.onEvent(StickerEvent.SaveSticker)
+                                viewModel.onEvent(StickerEvent.ImageSelected(Uri.EMPTY))
                             }
-                            // Return to grid
-                            viewModel.onEvent(StickerEvent.ImageSelected(Uri.EMPTY))
-                        } else {
-                            viewModel.onEvent(StickerEvent.ImageSelected(Uri.EMPTY))
                         }
+                    } else {
+                        viewModel.onEvent(StickerEvent.ImageSelected(Uri.EMPTY))
                     }
                 }
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    CircularProgressIndicator()
+                }
+            } else {
+                // Crop
+                Box(modifier = Modifier.fillMaxSize()) {
+                    var cropper by remember { mutableStateOf<com.canhub.cropper.CropImageView?>(null) }
 
-                // Save button for the cropper
-                FloatingActionButton(
-                    onClick = { cropper?.croppedImageAsync() },
-                    modifier = Modifier
-                        .align(Alignment.BottomEnd)
-                        .padding(16.dp),
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.primary
-                ) {
-                    Icon(Icons.Filled.Check, "Save Sticker")
+                    CanHubCropView(
+                        imageUri = state.imageUri,
+                        modifier = Modifier.fillMaxSize()
+                    ) { view ->
+                        cropper = view
+                        view.setOnCropImageCompleteListener { _, result ->
+                            if (result.isSuccessful && packId != null) {
+                                val croppedUri = result.uriContent
+                                val relativePath = convertImageToSticker(context, croppedUri, packId, stickers.size)
+                                if (relativePath != null) {
+                                    // If this is the first sticker, also create a proper 96x96 tray icon
+                                    if (stickers.isEmpty()) {
+                                        com.example.sticky.utils.image.convertImageToTrayIcon(context, croppedUri, packId)
+                                    }
+                                    viewModel.onEvent(StickerEvent.SetStickerFileName(relativePath))
+                                    viewModel.onEvent(StickerEvent.SetStickerEmojis("☕")) // WhatsApp requires at least 1 emoji
+                                    viewModel.onEvent(StickerEvent.SetStickerIsAnimated(false))
+                                    viewModel.onEvent(StickerEvent.SaveSticker)
+                                }
+                                // Return to grid
+                                viewModel.onEvent(StickerEvent.ImageSelected(Uri.EMPTY))
+                            } else {
+                                viewModel.onEvent(StickerEvent.ImageSelected(Uri.EMPTY))
+                            }
+                        }
+                    }
+
+                    // Save button for the cropper
+                    FloatingActionButton(
+                        onClick = { cropper?.croppedImageAsync() },
+                        modifier = Modifier
+                            .align(Alignment.BottomEnd)
+                            .padding(16.dp),
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.primary
+                    ) {
+                        Icon(Icons.Filled.Check, "Save Sticker")
+                    }
                 }
             }
         } else {
@@ -140,10 +182,12 @@ fun ImageSelector(
 @Composable
 fun StickerCard(
     uri: Uri,
+    imageLoader: ImageLoader,
     modifier: Modifier = Modifier
 ) {
     AsyncImage(
         model = uri,
+        imageLoader = imageLoader,
         contentDescription = "Sticker preview",
         contentScale = ContentScale.Crop,
         modifier = modifier
@@ -153,7 +197,18 @@ fun StickerCard(
 @Composable
 fun StickerGridScreen(stickers: List<StickerTable>, modifier: Modifier = Modifier) {
     val context = LocalContext.current
-    
+    val imageLoader = remember {
+        ImageLoader.Builder(context)
+            .components {
+                if (android.os.Build.VERSION.SDK_INT >= 28) {
+                    add(AnimatedImageDecoder.Factory())
+                } else {
+                    add(GifDecoder.Factory())
+                }
+            }
+            .build()
+    }
+
     LazyVerticalGrid(
         columns = GridCells.Fixed(3),
         contentPadding = PaddingValues(16.dp),
@@ -165,12 +220,13 @@ fun StickerGridScreen(stickers: List<StickerTable>, modifier: Modifier = Modifie
             val uri = remember(sticker.fileName) {
                 getStickerUri(context, sticker.fileName)
             }
-            
+
             Card(
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 StickerCard(
                     uri = uri,
+                    imageLoader = imageLoader,
                     modifier = Modifier.aspectRatio(1f)
                 )
             }
@@ -195,4 +251,3 @@ fun AddstickerButton(onClick: () -> Unit) {
         }
     }
 }
-

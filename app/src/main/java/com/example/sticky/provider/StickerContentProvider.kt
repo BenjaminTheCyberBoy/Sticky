@@ -114,13 +114,10 @@ class StickerContentProvider : ContentProvider() {
 
     override fun getType(uri: Uri): String {
         return when (MATCHER.match(uri)) {
-            METADATA_CODE -> "vnd.android.cursor.dir/vnd.${BuildConfig.CONTENT_PROVIDER_AUTHORITY}.$METADATA"
-            METADATA_CODE_FOR_SINGLE_PACK -> "vnd.android.cursor.item/vnd.${BuildConfig.CONTENT_PROVIDER_AUTHORITY}.$METADATA"
-            STICKERS_CODE -> "vnd.android.cursor.dir/vnd.${BuildConfig.CONTENT_PROVIDER_AUTHORITY}.$STICKERS"
-            STICKERS_ASSET_CODE -> {
-                val lastSegment = uri.lastPathSegment
-                if ((lastSegment != null) && lastSegment.endsWith(".webp")) "image/webp" else "image/png"
-            }
+            METADATA_CODE -> "vnd.android.cursor.dir/vnd.com.whatsapp.sticker.pack"
+            METADATA_CODE_FOR_SINGLE_PACK -> "vnd.android.cursor.item/vnd.com.whatsapp.sticker.pack"
+            STICKERS_CODE -> "vnd.android.cursor.dir/vnd.com.whatsapp.sticker"
+            STICKERS_ASSET_CODE -> "image/webp"
             else -> throw IllegalArgumentException("Unknown URI: $uri")
         }
     }
@@ -171,9 +168,9 @@ class StickerContentProvider : ContentProvider() {
             builder.add("") // publisherWebsite
             builder.add("") // privacyPolicyWebsite
             builder.add("") // licenseAgreementWebsite
-            builder.add(stickerPack.imageDataVersion.toString())
-            builder.add("0") // avoidCache
-            builder.add(if (stickerPack.isAnimated) "1" else "0")
+            builder.add(stickerPack.imageDataVersion)
+            builder.add(0) // avoidCache
+            builder.add(if (stickerPack.isAnimated) 1 else 0)
         }
         cursor.setNotificationUri(context!!.contentResolver, uri)
         return cursor
@@ -189,13 +186,14 @@ class StickerContentProvider : ContentProvider() {
         val cursor = MatrixCursor(
             arrayOf(
                 STICKER_FILE_NAME_IN_QUERY,
-                STICKER_FILE_EMOJI_IN_QUERY
+                STICKER_FILE_EMOJI_IN_QUERY,
+                STICKER_FILE_ACCESSIBILITY_TEXT_IN_QUERY
             )
         )
         for (sticker in stickers) {
             val name = sticker.fileName.substringAfterLast('/')
             val emojis = if (sticker.emojis.isEmpty()) "☕" else sticker.emojis
-            cursor.addRow(arrayOf(name, emojis))
+            cursor.addRow(arrayOf(name, emojis, "Sticker"))
         }
         cursor.setNotificationUri(context!!.contentResolver, uri)
         return cursor
